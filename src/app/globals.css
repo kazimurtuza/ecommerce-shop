@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Default Shajgoj Theme (Teal & Pink) */
+  --primary: #00827f;
+  --primary-hover: #006663;
+  --primary-light: #f0f9f9;
+  --accent: #ff3366;
+  --accent-hover: #e02454;
+  --accent-light: #fff0f3;
+}
+
+[data-theme="ice-gray"] {
+  /* Ice Gray Theme (#CAD3D8) */
+  --primary: #5c6d76;
+  --primary-hover: #47565e;
+  --primary-light: #f0f3f5;
+  --accent: #8b9ca5;
+  --accent-hover: #75868e;
+  --accent-light: #cad3d8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Theme mappings */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@utility scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
