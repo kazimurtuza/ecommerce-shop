@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface CartItem {
@@ -34,6 +34,45 @@ export default function CheckoutPage() {
   const [altPhone, setAltPhone] = useState("");
   const [deliveryNote, setDeliveryNote] = useState("");
   const [termsAgreed, setTermsAgreed] = useState(true);
+
+  // Saved Addresses state
+  const [savedAddresses] = useState([
+    {
+      id: "addr-1",
+      label: "Dhaka Home",
+      addressLine: "House 24, Road 5, Sector 11",
+      city: "Dhaka",
+      altPhone: "01711122233",
+      instructions: "Leave it with the security guard."
+    },
+    {
+      id: "addr-2",
+      label: "Ctg Office",
+      addressLine: "Flat 4B, Building 7, Nasirabad HS",
+      city: "Chittagong",
+      altPhone: "01999888777",
+      instructions: "Please call before arriving."
+    }
+  ]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("addr-1");
+
+  // Auto-populate inputs when selectedAddressId changes
+  useEffect(() => {
+    if (selectedAddressId === "custom") {
+      setDetailedAddress("");
+      setCity("");
+      setAltPhone("");
+      setDeliveryNote("");
+    } else {
+      const selected = savedAddresses.find(addr => addr.id === selectedAddressId);
+      if (selected) {
+        setDetailedAddress(selected.addressLine);
+        setCity(selected.city);
+        setAltPhone(selected.altPhone);
+        setDeliveryNote(selected.instructions);
+      }
+    }
+  }, [selectedAddressId, savedAddresses]);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
@@ -200,6 +239,61 @@ export default function CheckoutPage() {
               <span className="text-[13px] font-bold text-slate-500 uppercase tracking-wider pl-4 pb-2 block">Shipping Address</span>
               <div className="bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden divide-y divide-slate-100">
                 
+                {/* Saved Addresses Selector Row */}
+                <div className="p-4 bg-slate-50/50">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+                    Select Delivery Address
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {savedAddresses.map((addr) => {
+                      const isSelected = selectedAddressId === addr.id;
+                      return (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => setSelectedAddressId(addr.id)}
+                          className={`flex-1 min-w-[120px] p-3 text-left rounded-xl border transition-all active:scale-95 cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50/20 shadow-sm"
+                              : "border-slate-200 bg-white hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-slate-800">{addr.label}</span>
+                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                              isSelected ? "border-violet-600 bg-violet-600" : "border-slate-300"
+                            }`}>
+                              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 truncate max-w-[160px]">{addr.addressLine}</span>
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Custom Address Option */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAddressId("custom")}
+                      className={`flex-1 min-w-[120px] p-3 text-left rounded-xl border transition-all active:scale-95 cursor-pointer flex flex-col justify-between ${
+                        selectedAddressId === "custom"
+                          ? "border-violet-600 bg-violet-50/20 shadow-sm"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-slate-800">Custom Address</span>
+                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                          selectedAddressId === "custom" ? "border-violet-600 bg-violet-600" : "border-slate-300"
+                        }`}>
+                          {selectedAddressId === "custom" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400">Type address manually</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Detailed Address Row */}
                 <div className="flex items-center px-4 py-3.5 gap-4">
                   <span className="text-slate-400 w-5 shrink-0">
@@ -215,7 +309,10 @@ export default function CheckoutPage() {
                       autoComplete="street-address"
                       placeholder="House, Road, Area"
                       value={detailedAddress}
-                      onChange={(e) => setDetailedAddress(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedAddressId("custom");
+                        setDetailedAddress(e.target.value);
+                      }}
                       className="flex-1 bg-transparent text-[14px] placeholder-slate-400 focus:outline-none w-full py-0.5"
                     />
                   </div>
@@ -234,7 +331,10 @@ export default function CheckoutPage() {
                       <select
                         required
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
+                        onChange={(e) => {
+                          setSelectedAddressId("custom");
+                          setCity(e.target.value);
+                        }}
                         className="w-full bg-transparent text-[14px] focus:outline-none appearance-none cursor-pointer text-slate-800 font-medium py-0.5 pr-8"
                       >
                         <option value="">Select City</option>
@@ -270,7 +370,10 @@ export default function CheckoutPage() {
                       autoComplete="tel"
                       placeholder="Optional"
                       value={altPhone}
-                      onChange={(e) => setAltPhone(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedAddressId("custom");
+                        setAltPhone(e.target.value);
+                      }}
                       className="flex-1 bg-transparent text-[14px] placeholder-slate-400 focus:outline-none w-full py-0.5"
                     />
                   </div>
@@ -288,7 +391,10 @@ export default function CheckoutPage() {
                     <textarea
                       placeholder="Delivery instructions (optional)"
                       value={deliveryNote}
-                      onChange={(e) => setDeliveryNote(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedAddressId("custom");
+                        setDeliveryNote(e.target.value);
+                      }}
                       rows={2}
                       className="flex-1 bg-transparent text-[14px] placeholder-slate-400 focus:outline-none w-full resize-none py-0.5"
                     />

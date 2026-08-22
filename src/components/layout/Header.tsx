@@ -252,6 +252,14 @@ export default function Header() {
                 LOGIN
               </button>
 
+              {/* Account Button */}
+              <Link
+                href="/account"
+                className="flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-extrabold px-6 py-3 rounded-full tracking-widest border border-slate-100 hover:border-slate-200 transition-all duration-200 select-none focus:outline-none focus:ring-2 focus:ring-slate-300"
+              >
+                ACCOUNT
+              </Link>
+
               {/* Shopping Bag Button */}
               <button
                 onClick={() => setIsBagOpen(true)}
@@ -510,6 +518,16 @@ export default function Header() {
                   </svg>
                   Login / Signup
                 </button>
+                <Link
+                  href="/account"
+                  className="flex items-center gap-3 text-sm text-slate-700 hover:text-accent font-semibold w-full text-left focus:outline-none"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  My Account
+                </Link>
               </nav>
             </div>
 
