@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import LoginModal from "../auth/LoginModal";
+import QuickViewModal from "../product/QuickViewModal";
 
 // Mock Brands Data
 const BRANDS_LIST = [
@@ -45,6 +46,62 @@ const SEARCH_PRODUCTS = [
   }
 ];
 
+interface BagItem {
+  id: number;
+  name: string;
+  category: string;
+  color: string;
+  type?: string;
+  size: string;
+  price: number;
+  qty: number;
+  image: string;
+  availableColors: { name: string; hex: string }[];
+  availableTypes?: string[];
+  availableSizes: string[];
+}
+
+const INITIAL_BAG_ITEMS: BagItem[] = [
+  {
+    id: 1,
+    name: "Red Santa Christmas Tree Print Matching Family Christmas Pajamas",
+    category: "Family Matching",
+    color: "Hot Pink",
+    type: "Women",
+    size: "XL",
+    price: 38.99,
+    qty: 5,
+    image: "/images/products/christmas_mom_pajama.jpg",
+    availableColors: [
+      { name: "Hot Pink", hex: "#f43f5e" },
+      { name: "Crimson Red", hex: "#dc2626" },
+      { name: "Navy Blue", hex: "#1e3a8a" },
+      { name: "Dark Forest", hex: "#166534" }
+    ],
+    availableTypes: ["Women", "Men", "Kids", "Baby"],
+    availableSizes: ["S", "M", "L", "XL", "2XL"]
+  },
+  {
+    id: 2,
+    name: "Cream Gingerbread Print Matching Family Christmas Pajamas",
+    category: "Family Matching",
+    color: "Khaki",
+    type: "Kids",
+    size: "2Y",
+    price: 23.99,
+    qty: 2,
+    image: "/images/products/christmas_kid_pajama.jpg",
+    availableColors: [
+      { name: "Khaki", hex: "#c3b091" },
+      { name: "Cream White", hex: "#fef3c7" },
+      { name: "Gingerbread Brown", hex: "#854d0e" },
+      { name: "Forest Green", hex: "#15803d" }
+    ],
+    availableTypes: ["Kids", "Toddler", "Baby"],
+    availableSizes: ["12-18M", "2Y", "3Y", "4Y", "5Y", "6Y"]
+  }
+];
+
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -52,6 +109,108 @@ export default function Header() {
   const [isBrandsDropdownOpen, setIsBrandsDropdownOpen] = useState(false);
   const [isBagOpen, setIsBagOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // Shopping Bag state
+  const [bagItems, setBagItems] = useState<BagItem[]>(INITIAL_BAG_ITEMS);
+  const [editingItem, setEditingItem] = useState<BagItem | null>(null);
+
+  // Listen for items added via QuickViewModal across pages
+  useEffect(() => {
+    const handleAddFromEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<any>;
+      if (customEvent.detail) {
+        const newItem = customEvent.detail;
+        setBagItems((prev) => {
+          const existingIdx = prev.findIndex(
+            (i) =>
+              i.name === newItem.name &&
+              i.color === newItem.color &&
+              i.size === newItem.size &&
+              i.type === newItem.type
+          );
+          if (existingIdx > -1) {
+            const updated = [...prev];
+            updated[existingIdx] = {
+              ...updated[existingIdx],
+              qty: updated[existingIdx].qty + newItem.qty
+            };
+            return updated;
+          }
+          return [
+            ...prev,
+            {
+              id: newItem.id || Date.now(),
+              name: newItem.name,
+              category: newItem.category || "General",
+              color: newItem.color,
+              type: newItem.type,
+              size: newItem.size,
+              price: newItem.price,
+              qty: newItem.qty,
+              image: newItem.image,
+              availableColors: newItem.availableColors || [
+                { name: newItem.color, hex: "#333333" }
+              ],
+              availableTypes: newItem.availableTypes || [],
+              availableSizes: newItem.availableSizes || [newItem.size]
+            }
+          ];
+        });
+        setIsBagOpen(true);
+      }
+    };
+
+    window.addEventListener("bag:add", handleAddFromEvent);
+    return () => window.removeEventListener("bag:add", handleAddFromEvent);
+  }, []);
+
+  const handleOpenEdit = (item: BagItem) => {
+    setEditingItem(item);
+  };
+
+  const handleUpdateBagItem = (details: {
+    id: number;
+    color: string;
+    size: string;
+    type?: string;
+    qty: number;
+  }) => {
+    setBagItems((prev) =>
+      prev.map((item) =>
+        item.id === details.id
+          ? {
+              ...item,
+              color: details.color,
+              size: details.size,
+              type: details.type || item.type,
+              qty: details.qty
+            }
+          : item
+      )
+    );
+    setEditingItem(null);
+  };
+
+  const handleUpdateQty = (id: number, delta: number) => {
+    setBagItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const newQty = item.qty + delta;
+          return newQty > 0 ? { ...item, qty: newQty } : item;
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleRemoveItem = (id: number) => {
+    setBagItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const subtotal = bagItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const totalCount = bagItems.reduce((acc, item) => acc + item.qty, 0);
+  const shipping = "Free";
+  const total = subtotal;
 
   const brandsDropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -276,7 +435,7 @@ export default function Header() {
                 </svg>
                 <span>BAG</span>
                 <span className="flex items-center justify-center bg-white text-accent text-[10px] w-4.5 h-4.5 rounded-full font-black select-none">
-                  2
+                  {bagItems.length}
                 </span>
               </button>
             </div>
@@ -350,7 +509,7 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <span className="absolute top-0 right-0.5 flex items-center justify-center bg-accent text-white text-[9px] w-4.5 h-4.5 rounded-full font-bold shadow-sm">
-                  2
+                  {bagItems.length}
                 </span>
               </button>
             </div>
@@ -554,16 +713,17 @@ export default function Header() {
 
           <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col z-50 animate-slideLeft">
             {/* Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">Your Bag</span>
+                <span className="font-bold text-slate-900 text-lg">Your Bag</span>
                 <span className="bg-accent/15 text-accent text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  2 Items
+                  {bagItems.length} {bagItems.length === 1 ? "Item" : "Items"}
                 </span>
               </div>
               <button
                 onClick={() => setIsBagOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                aria-label="Close bag drawer"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -573,70 +733,169 @@ export default function Header() {
 
             {/* Bag Items list */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Item 1 */}
-              <div className="flex gap-4 border-b border-slate-100 pb-4">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold text-xs shrink-0 select-none">
-                  ON
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-slate-800 truncate">
-                    The Ordinary Niacinamide 10% + Zinc 1%
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Size: 30ml</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-bold text-slate-900">1099 BDT</span>
-                    <span className="text-xs text-slate-500 font-medium">Qty: 1</span>
+              {bagItems.length === 0 ? (
+                <div className="text-center py-16 space-y-3">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
                   </div>
+                  <p className="text-sm font-semibold text-slate-700">Your bag is empty</p>
+                  <p className="text-xs text-slate-400">Add items to get started!</p>
                 </div>
-              </div>
+              ) : (
+                bagItems.map((item) => (
+                  <div key={item.id} className="flex gap-4 border-b border-slate-100 pb-5 items-start">
+                    {/* Product Image Thumbnail */}
+                    <div className="w-20 h-24 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100 shadow-xs relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
 
-              {/* Item 2 */}
-              <div className="flex gap-4 border-b border-slate-100 pb-4">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold text-xs shrink-0 select-none">
-                  CC
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-slate-800 truncate">
-                    CeraVe Foaming Facial Cleanser
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Size: 236ml</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-bold text-slate-900">1850 BDT</span>
-                    <span className="text-xs text-slate-500 font-medium">Qty: 1</span>
+                    {/* Product Details */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                      <div>
+                        {/* Category Pill Tag */}
+                        {item.category && (
+                          <span className="inline-block bg-[#f1f2f4] text-slate-700 text-[11px] font-medium px-2.5 py-0.5 rounded-full mb-1">
+                            {item.category}
+                          </span>
+                        )}
+
+                        {/* Title */}
+                        <h4 className="text-sm font-medium text-slate-900 line-clamp-1 leading-snug" title={item.name}>
+                          {item.name}
+                        </h4>
+
+                        {/* Variant Selector Button with Edit Chevron (Matches Image) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(item)}
+                          className="text-xs text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 mt-1 py-0.5 group cursor-pointer focus:outline-none"
+                          title="Click to edit options"
+                        >
+                          <span>
+                            {item.color} / {item.type ? `${item.type} / ` : ""}{item.size}
+                          </span>
+                          <svg
+                            className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-900 transition-transform group-hover:translate-y-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Bottom Row: Stepper & Price */}
+                      <div className="flex justify-between items-center mt-3 pt-1">
+                        {/* Quantity Stepper Pill */}
+                        <div className="flex items-center border border-slate-200 rounded-full px-2 py-0.5 bg-white shadow-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQty(item.id, -1)}
+                            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-colors text-sm font-semibold focus:outline-none cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            −
+                          </button>
+                          <span className="w-7 text-center text-xs font-bold text-slate-800 select-none">
+                            {item.qty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQty(item.id, 1)}
+                            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-colors text-sm font-semibold focus:outline-none cursor-pointer"
+                            aria-label="Increase quantity"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <span className="text-sm font-bold text-slate-900">
+                          ${item.price.toFixed(2)} USD
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
 
-            {/* Footer summary and checkout buttons */}
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50 space-y-4">
-              <div className="flex justify-between text-sm font-semibold text-slate-700">
-                <span>Subtotal</span>
-                <span className="font-extrabold text-slate-950">2949 BDT</span>
+            {/* Footer summary and checkout buttons (Styled exactly like PatPat screenshot) */}
+            {bagItems.length > 0 && (
+              <div className="p-6 border-t border-slate-100 bg-white space-y-4">
+                {/* Summary Box */}
+                <div className="bg-[#f8f9fa] rounded-2xl p-4 space-y-2.5 border border-slate-100/80">
+                  <div className="flex justify-between text-sm text-slate-600 font-medium">
+                    <span>Subtotal</span>
+                    <span className="text-slate-900 font-semibold">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600 font-medium">
+                    <span>Shipping</span>
+                    <span className="text-slate-900 font-semibold">{shipping}</span>
+                  </div>
+                  <div className="border-t border-slate-200/80 pt-2.5 flex justify-between text-base font-bold text-slate-900">
+                    <span>Total</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Checkout & View Cart Action Buttons */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <Link
+                    href="/cart"
+                    onClick={() => setIsBagOpen(false)}
+                    className="flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3.5 rounded-xl transition-colors text-center"
+                  >
+                    View Cart
+                  </Link>
+                  <Link
+                    href="/checkout"
+                    onClick={() => setIsBagOpen(false)}
+                    className="flex items-center justify-center bg-accent hover:bg-accent-hover text-white font-bold text-xs py-3.5 rounded-xl shadow-md shadow-accent/20 transition-colors text-center"
+                  >
+                    Checkout
+                  </Link>
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                Shipping and taxes are calculated at checkout. Free shipping is applied to your order!
-              </p>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <Link
-                  href="/cart"
-                  onClick={() => setIsBagOpen(false)}
-                  className="flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3.5 rounded-xl transition-colors text-center"
-                >
-                  View Cart
-                </Link>
-                <Link
-                  href="/checkout"
-                  onClick={() => setIsBagOpen(false)}
-                  className="flex items-center justify-center bg-accent hover:bg-accent-hover text-white font-bold text-xs py-3.5 rounded-xl shadow-md shadow-accent/20 transition-colors text-center"
-                >
-                  Checkout
-                </Link>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Edit Bag Item Modal (Opens QuickViewModal in edit mode) */}
+      <QuickViewModal
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        mode="edit"
+        product={
+          editingItem
+            ? {
+                id: editingItem.id,
+                name: editingItem.name,
+                price: editingItem.price,
+                tag: editingItem.category,
+                image: editingItem.image,
+                availableColors: editingItem.availableColors,
+                availableTypes: editingItem.availableTypes,
+                availableSizes: editingItem.availableSizes
+              }
+            : null
+        }
+        initialColor={editingItem?.color}
+        initialSize={editingItem?.size}
+        initialType={editingItem?.type}
+        initialQty={editingItem?.qty}
+        onUpdateBag={handleUpdateBagItem}
+        onRemoveItem={handleRemoveItem}
+      />
 
       {/* Login Modal Overlay */}
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />

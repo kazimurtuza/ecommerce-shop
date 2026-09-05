@@ -8,9 +8,10 @@ import React, { useState } from "react";
 
 interface ShippingAddress {
   id: string;
+  type: "home" | "office";
   addressLine: string;
   city: string;
-  altPhone?: string;
+  phone: string;
   instructions?: string;
   isDefault: boolean;
 }
@@ -22,17 +23,19 @@ interface ShippingAddress {
 const INITIAL_ADDRESSES: ShippingAddress[] = [
   {
     id: "addr-1",
+    type: "home",
     addressLine: "House 24, Road 5, Sector 11",
     city: "Dhaka",
-    altPhone: "01711122233",
+    phone: "01711122233",
     instructions: "Leave it with the security guard.",
     isDefault: true,
   },
   {
     id: "addr-2",
+    type: "office",
     addressLine: "Flat 4B, Building 7, Nasirabad Housing Society",
     city: "Chattogram",
-    altPhone: "01999888777",
+    phone: "01999888777",
     instructions: "Please call before arriving.",
     isDefault: false,
   }
@@ -59,9 +62,10 @@ export default function AddressesPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
+  const [formType, setFormType] = useState<"home" | "office">("home");
   const [formAddress, setFormAddress] = useState("");
   const [formCity, setFormCity] = useState("");
-  const [formAltPhone, setFormAltPhone] = useState("");
+  const [formPhone, setFormPhone] = useState("");
   const [formInstructions, setFormInstructions] = useState("");
   const [formIsDefault, setFormIsDefault] = useState(false);
 
@@ -69,9 +73,10 @@ export default function AddressesPage() {
   const [validationError, setValidationError] = useState("");
 
   const resetAddressForm = () => {
+    setFormType("home");
     setFormAddress("");
     setFormCity("");
-    setFormAltPhone("");
+    setFormPhone("");
     setFormInstructions("");
     setFormIsDefault(false);
     setValidationError("");
@@ -81,9 +86,10 @@ export default function AddressesPage() {
 
   const handleEditAddress = (addr: ShippingAddress) => {
     setEditingAddressId(addr.id);
+    setFormType(addr.type || "home");
     setFormAddress(addr.addressLine);
     setFormCity(addr.city);
-    setFormAltPhone(addr.altPhone || "");
+    setFormPhone(addr.phone || "");
     setFormInstructions(addr.instructions || "");
     setFormIsDefault(addr.isDefault);
     setShowAddForm(true);
@@ -100,6 +106,10 @@ export default function AddressesPage() {
       setValidationError("City/District is required");
       return;
     }
+    if (!formPhone.trim()) {
+      setValidationError("Phone number is required");
+      return;
+    }
 
     let updatedAddresses = [...addresses];
 
@@ -109,9 +119,10 @@ export default function AddressesPage() {
         if (addr.id === editingAddressId) {
           return {
             ...addr,
+            type: formType,
             addressLine: formAddress,
             city: formCity,
-            altPhone: formAltPhone,
+            phone: formPhone,
             instructions: formInstructions,
             isDefault: formIsDefault,
           };
@@ -122,9 +133,10 @@ export default function AddressesPage() {
       // Add new
       const newAddress: ShippingAddress = {
         id: "addr-" + Date.now(),
+        type: formType,
         addressLine: formAddress,
         city: formCity,
-        altPhone: formAltPhone,
+        phone: formPhone,
         instructions: formInstructions,
         isDefault: formIsDefault,
       };
@@ -223,9 +235,77 @@ export default function AddressesPage() {
             )}
 
             <form onSubmit={handleAddOrUpdateAddress} className="space-y-6">
-              {/* Form Input Group Wrapper (matches image format) */}
+              {/* Form Input Group Wrapper */}
               <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-100/80 shadow-sm">
                 
+                {/* Address Type (Home / Office) Selector */}
+                <div className="p-4 bg-slate-50/40">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+                    Select Address Type
+                  </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Home Option */}
+                    <button
+                      type="button"
+                      onClick={() => setFormType("home")}
+                      className={`p-3 text-left rounded-xl border transition-all active:scale-95 cursor-pointer flex items-center justify-between ${
+                        formType === "home"
+                          ? "border-violet-600 bg-violet-50/40 shadow-sm ring-1 ring-violet-600/20"
+                          : "border-slate-200/80 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          formType === "home" ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          <svg className="w-4.5 h-4.5 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        </div>
+                        <div className="truncate">
+                          <span className="text-xs font-bold text-slate-800 block">Home</span>
+                          <span className="text-[10px] text-slate-400 block truncate">All Day Delivery</span>
+                        </div>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all ${
+                        formType === "home" ? "border-violet-600 bg-violet-600" : "border-slate-300"
+                      }`}>
+                        {formType === "home" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </button>
+
+                    {/* Office Option */}
+                    <button
+                      type="button"
+                      onClick={() => setFormType("office")}
+                      className={`p-3 text-left rounded-xl border transition-all active:scale-95 cursor-pointer flex items-center justify-between ${
+                        formType === "office"
+                          ? "border-violet-600 bg-violet-50/40 shadow-sm ring-1 ring-violet-600/20"
+                          : "border-slate-200/80 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          formType === "office" ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          <svg className="w-4.5 h-4.5 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div className="truncate">
+                          <span className="text-xs font-bold text-slate-800 block">Office</span>
+                          <span className="text-[10px] text-slate-400 block truncate">9 AM - 6 PM</span>
+                        </div>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all ${
+                        formType === "office" ? "border-violet-600 bg-violet-600" : "border-slate-300"
+                      }`}>
+                        {formType === "office" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Address Input Row */}
                 <div className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-3">
                   <div className="flex items-center gap-3 shrink-0 md:w-1/3 mt-1">
@@ -240,6 +320,7 @@ export default function AddressesPage() {
                     type="text"
                     value={formAddress}
                     onChange={(e) => setFormAddress(e.target.value)}
+                    autoComplete="street-address"
                     className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300 md:w-2/3"
                     placeholder="House, Road, Area"
                     required
@@ -277,22 +358,25 @@ export default function AddressesPage() {
                   </div>
                 </div>
 
-                {/* Alt Phone Row */}
+                {/* Main Phone Row */}
                 <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex items-center gap-3 shrink-0 md:w-1/3">
                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                     </svg>
                     <label className="text-sm font-bold text-slate-600">
-                      Alt. Phone
+                      Phone Number *
                     </label>
                   </div>
                   <input
                     type="tel"
-                    value={formAltPhone}
-                    onChange={(e) => setFormAltPhone(e.target.value)}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.target.value)}
                     className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300 md:w-2/3"
-                    placeholder="Optional"
+                    placeholder="01XXXXXXXXX"
+                    required
                   />
                 </div>
 
@@ -311,7 +395,7 @@ export default function AddressesPage() {
                     value={formInstructions}
                     onChange={(e) => setFormInstructions(e.target.value)}
                     className="w-full bg-transparent border-0 p-0 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300 md:w-2/3"
-                    placeholder="Optional"
+                    placeholder="Optional (e.g. Leave with guard, ring bell)"
                   />
                 </div>
               </div>
@@ -391,22 +475,50 @@ export default function AddressesPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-slate-800 text-sm">
-                        {addr.city} Address
+                        {addr.type === "office" ? "Office" : "Home"} Address
                       </span>
+
+                      {/* Type Badge */}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                        addr.type === "office"
+                          ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                          : "bg-blue-50 text-blue-700 border border-blue-200/60"
+                      }`}>
+                        {addr.type === "office" ? (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        )}
+                        <span className="capitalize">{addr.type}</span>
+                      </span>
+
+                      <span className="text-xs text-slate-400 font-medium">• {addr.city}</span>
+
                       {addr.isDefault && (
                         <span className="bg-violet-100 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
                           Default
                         </span>
                       )}
                     </div>
+
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">
                       {addr.addressLine}
                     </p>
-                    {addr.altPhone && (
-                      <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                        <span className="text-slate-500">Alt Phone:</span> {addr.altPhone}
+
+                    {addr.phone && (
+                      <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                        </svg>
+                        <span className="text-slate-400 font-normal">Phone:</span>
+                        <span className="font-semibold text-slate-700">{addr.phone}</span>
                       </p>
                     )}
+
                     {addr.instructions && (
                       <p className="text-xs text-slate-400 italic">
                         &ldquo;{addr.instructions}&rdquo;

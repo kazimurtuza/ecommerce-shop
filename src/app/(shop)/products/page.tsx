@@ -1,83 +1,194 @@
-import Link from "next/link";
+"use client";
+
+import React, { useState, useMemo } from "react";
+import ProductCard from "@/components/product/ProductCard";
+import QuickViewModal, { QuickViewProduct } from "@/components/product/QuickViewModal";
+
+const PRODUCTS_LIST: QuickViewProduct[] = [
+  {
+    id: 1,
+    name: "Red Santa Christmas Tree Print Matching Family Christmas Pajamas",
+    price: "$38.99",
+    category: "Family Matching",
+    tag: "Family Matching",
+    slug: "santa-family-pajamas",
+    image: "/images/products/christmas_mom_pajama.jpg",
+    availableColors: [
+      { name: "Hot Pink", hex: "#f43f5e", image: "/images/products/christmas_mom_pajama.jpg" },
+      { name: "Crimson Red", hex: "#dc2626", image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=600&h=800&fit=crop&q=80" },
+      { name: "Navy Blue", hex: "#1e3a8a", image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&h=800&fit=crop&q=80" },
+      { name: "Dark Forest", hex: "#166534", image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop&q=80" }
+    ],
+    availableTypes: ["Women", "Men", "Kids", "Baby"],
+    availableSizes: ["S", "M", "L", "XL", "2XL"]
+  },
+  {
+    id: 2,
+    name: "Cream Gingerbread Print Matching Family Christmas Pajamas",
+    price: "$23.99",
+    category: "Family Matching",
+    tag: "Family Matching",
+    slug: "gingerbread-family-pajamas",
+    image: "/images/products/christmas_kid_pajama.jpg",
+    availableColors: [
+      { name: "Khaki", hex: "#c3b091", image: "/images/products/christmas_kid_pajama.jpg" },
+      { name: "Cream White", hex: "#fef3c7", image: "https://images.unsplash.com/photo-1519725392663-8a30ef1d15ca?w=600&h=800&fit=crop&q=80" },
+      { name: "Gingerbread Brown", hex: "#854d0e", image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&h=800&fit=crop&q=80" }
+    ],
+    availableTypes: ["Kids", "Toddler", "Baby"],
+    availableSizes: ["12-18M", "2Y", "3Y", "4Y", "5Y", "6Y"]
+  },
+  {
+    id: 3,
+    name: "Baby Bear Graphic Print Long-sleeve Onesie Romper",
+    price: "$16.50",
+    category: "Baby & Toddler",
+    tag: "Baby & Toddler",
+    slug: "baby-bear-onesie",
+    image: "/images/products/baby_bear_onesie.jpg",
+    availableColors: [
+      { name: "Sky Blue", hex: "#38bdf8", image: "/images/products/baby_bear_onesie.jpg" },
+      { name: "Oatmeal", hex: "#e2e8f0" }
+    ],
+    availableSizes: ["0-3M", "3-6M", "6-9M", "9-12M"]
+  },
+  {
+    id: 4,
+    name: "Winter Wonderland Snowflake Thermal Sleep Set",
+    price: "$32.00",
+    category: "Sleepwear",
+    tag: "Sleepwear",
+    slug: "snowflake-thermal-set",
+    image: "/images/products/winter_thermal_set.jpg",
+    availableColors: [
+      { name: "Icy Grey", hex: "#94a3b8", image: "/images/products/winter_thermal_set.jpg" },
+      { name: "Midnight Navy", hex: "#0f172a" }
+    ],
+    availableSizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 5,
+    name: "Classic Plaid Reindeer Ears Hooded Family Robe",
+    price: "$42.50",
+    category: "Loungewear",
+    tag: "Loungewear",
+    slug: "plaid-reindeer-robe",
+    image: "/images/products/plaid_hooded_robe.jpg",
+    availableColors: [
+      { name: "Buffalo Red", hex: "#b91c1c", image: "/images/products/plaid_hooded_robe.jpg" },
+      { name: "Evergreen Plaid", hex: "#14532d" }
+    ],
+    availableSizes: ["M", "L", "XL", "2XL"]
+  },
+  {
+    id: 6,
+    name: "Minimalist Leather Backpack",
+    price: "$120.00",
+    category: "Accessories",
+    tag: "Accessories",
+    slug: "minimalist-leather-backpack",
+    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&h=800&fit=crop&q=80",
+    availableColors: [
+      { name: "Cognac Brown", hex: "#854d0e" },
+      { name: "Charcoal Black", hex: "#1e293b" }
+    ],
+    availableSizes: ["Standard"]
+  }
+];
 
 export default function ProductsPage() {
-  const dummyProducts = [
-    { id: 1, name: "Premium Wireless Headset", price: 199.0, category: "electronics", slug: "premium-wireless-headset", desc: "Noise cancelling studio headphones" },
-    { id: 2, name: "Minimalist Leather Backpack", price: 120.0, category: "fashion", slug: "minimalist-leather-backpack", desc: "Handcrafted full-grain leather backpack" },
-    { id: 3, name: "Smart Ergonomic Desk Lamp", price: 85.0, category: "home-living", slug: "smart-ergonomic-desk-lamp", desc: "LED eye-friendly lamp with phone charger" },
-    { id: 4, name: "Hydrating Botanic Face Serum", price: 45.0, category: "beauty", slug: "hydrating-botanic-face-serum", desc: "All-natural organic rosehip face serum" },
-    { id: 5, name: "Mechanical Mechanical Keyboard", price: 159.0, category: "electronics", slug: "mechanical-keyboard", desc: "Hot-swappable tactile mechanical keyboard" },
-    { id: 6, name: "Classic Cotton White Tee", price: 29.0, category: "fashion", slug: "cotton-white-tee", desc: "100% organic cotton breathable tee" }
-  ];
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedProduct, setSelectedProduct] = useState<QuickViewProduct | null>(null);
+
+  const categories = ["All", "Family Matching", "Baby & Toddler", "Sleepwear", "Loungewear", "Accessories"];
+
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === "All") return PRODUCTS_LIST;
+    return PRODUCTS_LIST.filter((p) => p.category === selectedCategory);
+  }, [selectedCategory]);
 
   return (
     <div className="bg-slate-50 min-h-screen py-12 px-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-2">Explore Products</h1>
-        <p className="text-slate-500 mb-10">Find premium quality items curated just for you.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-slate-200/70">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+              Explore Products
+            </h1>
+            <p className="text-slate-500 mt-2 font-medium">
+              Discover quality apparel & essentials crafted for comfort and style.
+            </p>
+          </div>
+          <div className="text-xs font-bold text-slate-400 mt-4 md:mt-0 uppercase tracking-wider">
+            Showing {filteredProducts.length} Items
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filter Sidebar */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-fit">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Filters</h3>
-            
-            <div className="mb-6">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Categories</h4>
-              <div className="space-y-2">
-                {["Electronics", "Fashion", "Home & Living", "Beauty & Wellness"].map((c) => (
-                  <label key={c} className="flex items-center gap-3 text-sm text-slate-600 hover:text-slate-900 cursor-pointer">
-                    <input type="checkbox" className="rounded text-violet-600 focus:ring-violet-500 border-slate-300" />
-                    <span>{c}</span>
-                  </label>
-                ))}
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs h-fit space-y-6">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                Categories
+              </h3>
+              <div className="space-y-1.5">
+                {categories.map((c) => {
+                  const isActive = selectedCategory === c;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedCategory(c)}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-between ${
+                        isActive
+                          ? "bg-accent/10 text-accent font-extrabold"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>{c}</span>
+                      {isActive && (
+                        <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="mb-6">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Price Range</h4>
-              <div className="flex items-center gap-2">
-                <input type="number" placeholder="Min" className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-                <span className="text-slate-400">-</span>
-                <input type="number" placeholder="Max" className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-              </div>
+            {/* Quality Badge */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guaranteed</span>
+              <p className="text-xs font-bold text-slate-800">30-Day Easy Returns</p>
+              <p className="text-[11px] text-slate-500">Free shipping on orders over $50 USD</p>
             </div>
-
-            <button className="w-full bg-violet-600 hover:bg-violet-700 text-white font-medium py-2 rounded-xl text-sm transition-colors shadow-sm">
-              Apply Filters
-            </button>
           </div>
 
           {/* Product Grid */}
           <div className="lg:col-span-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dummyProducts.map((product) => (
-                <div key={product.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-100">
-                  <div className="aspect-square bg-slate-100 relative flex items-center justify-center p-8 group-hover:bg-slate-200/50 transition-colors">
-                    <span className="text-slate-400 font-bold text-lg">{product.name.split(" ").map(w => w[0]).join("")}</span>
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-white/95 backdrop-blur-sm text-xs font-semibold px-2 py-1 rounded text-slate-900 border border-slate-100">
-                        {product.category}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-semibold text-slate-800 group-hover:text-violet-600 transition-colors line-clamp-1">
-                        <Link href={`/products/${product.slug}`}>{product.name}</Link>
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">{product.desc}</p>
-                      <p className="text-lg font-bold mt-3 text-slate-900">${product.price.toFixed(2)}</p>
-                    </div>
-                    <button className="mt-4 w-full bg-violet-600 hover:bg-violet-700 text-white font-medium py-2 rounded-xl text-sm transition-colors">
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  title={product.name}
+                  price={typeof product.price === "number" ? `$${product.price.toFixed(2)}` : product.price}
+                  tag={product.tag || product.category || "General"}
+                  image={product.image}
+                  slug={product.slug || "product"}
+                  onAddToBag={() => setSelectedProduct(product)}
+                />
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Quick View Customizer Modal */}
+      <QuickViewModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </div>
   );
 }

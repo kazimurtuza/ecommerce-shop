@@ -1,70 +1,143 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
-interface Product {
-  id: number;
+export interface ProductColor {
   name: string;
-  price: string;
-  tag: string;
-  slug: string;
-  image: string;
+  image?: string;
+  hex?: string;
 }
 
-interface QuickViewModalProps {
-  product: Product | null;
+export interface ProductSize {
+  value: string;
+  available?: boolean;
+}
+
+export interface QuickViewProduct {
+  id: number;
+  name: string;
+  price: string | number;
+  tag?: string;
+  slug?: string;
+  image: string;
+  category?: string;
+  availableColors?: ProductColor[];
+  availableTypes?: string[];
+  availableSizes?: (string | ProductSize)[];
+}
+
+export interface QuickViewModalProps {
+  product: QuickViewProduct | null;
   isOpen: boolean;
   onClose: () => void;
+  mode?: "add" | "edit";
+  initialColor?: string;
+  initialSize?: string;
+  initialType?: string;
+  initialQty?: number;
+  onAddToBag?: (details: {
+    product: QuickViewProduct;
+    color: string;
+    size: string;
+    type?: string;
+    qty: number;
+  }) => void;
+  onUpdateBag?: (details: {
+    id: number;
+    color: string;
+    size: string;
+    type?: string;
+    qty: number;
+  }) => void;
+  onRemoveItem?: (id: number) => void;
 }
 
 export default function QuickViewModal({
   product,
   isOpen,
-  onClose
+  onClose,
+  mode = "add",
+  initialColor,
+  initialSize,
+  initialType,
+  initialQty = 1,
+  onAddToBag,
+  onUpdateBag,
+  onRemoveItem
 }: QuickViewModalProps) {
+  // Normalize color swatches
+  const colorsList: ProductColor[] = useMemo(() => {
+    if (product?.availableColors && product.availableColors.length > 0) {
+      return product.availableColors;
+    }
+    if (!product) return [];
+    return [
+      {
+        name: "Roseo",
+        image: product.image
+      },
+      {
+        name: "Mustard",
+        image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=80&h=80&fit=crop&q=80",
+        hex: "#eab308"
+      },
+      {
+        name: "Lavande",
+        image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=80&h=80&fit=crop&q=80",
+        hex: "#a855f7"
+      }
+    ];
+  }, [product]);
+
+  // Normalize size options
+  const sizesList: { value: string; available: boolean }[] = useMemo(() => {
+    if (product?.availableSizes && product.availableSizes.length > 0) {
+      return product.availableSizes.map((s) => {
+        if (typeof s === "string") {
+          return { value: s, available: true };
+        }
+        return { value: s.value, available: s.available !== false };
+      });
+    }
+    return [
+      { value: "3-4Y", available: false },
+      { value: "4-5Y", available: false },
+      { value: "5-6Y", available: false },
+      { value: "6-7Y", available: true },
+      { value: "7-8Y", available: true },
+      { value: "8-9Y", available: false },
+      { value: "9-10Y", available: true }
+    ];
+  }, [product]);
+
   const [selectedColor, setSelectedColor] = useState<string>("Roseo");
   const [selectedSize, setSelectedSize] = useState<string>("6-7Y");
+  const [selectedType, setSelectedType] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
-  // Reset states when a new product is selected or modal opens
+  // Sync state whenever product or initial values change
   useEffect(() => {
-    if (product) {
-      setSelectedColor("Roseo");
-      setSelectedSize("6-7Y");
-      setQuantity(1);
+    if (product && isOpen) {
+      const defaultColor = initialColor || (colorsList[0]?.name ?? "Roseo");
+      const defaultSize =
+        initialSize ||
+        (sizesList.find((s) => s.available)?.value ?? sizesList[0]?.value ?? "6-7Y");
+      const defaultType =
+        initialType ||
+        (product.availableTypes && product.availableTypes.length > 0
+          ? product.availableTypes[0]
+          : "");
+
+      setSelectedColor(defaultColor);
+      setSelectedSize(defaultSize);
+      setSelectedType(defaultType);
+      setQuantity(initialQty > 0 ? initialQty : 1);
       setActiveImageIndex(0);
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, initialColor, initialSize, initialType, initialQty, colorsList, sizesList]);
 
   if (!isOpen || !product) return null;
-
-  // Mock colors matching screenshot swatch styles
-  const COLORS_DATA = [
-    {
-      name: "Mustard",
-      image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=80&h=80&fit=crop&q=80"
-    },
-    {
-      name: "Lavande",
-      image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=80&h=80&fit=crop&q=80"
-    },
-    {
-      name: "Roseo",
-      image: product.image // Use current product image as primary color swatch
-    }
-  ];
-
-  // Mock sizes matching layout
-  const SIZES_DATA = [
-    { value: "3-4Y", available: false },
-    { value: "4-5Y", available: false },
-    { value: "5-6Y", available: false },
-    { value: "6-7Y", available: true },
-    { value: "7-8Y", available: true },
-    { value: "8-9Y", available: false },
-    { value: "9-10Y", available: true }
-  ];
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -73,26 +146,88 @@ export default function QuickViewModal({
   };
 
   const handleNextImage = () => {
-    // Just toggle between product image and a color image for demo slideshow
     setActiveImageIndex((prev) => (prev === 0 ? 1 : 0));
   };
 
-  const displayImage = activeImageIndex === 0 ? product.image : COLORS_DATA[0].image;
+  // Find color preview image if matching swatch has an image
+  const matchingColor = colorsList.find((c) => c.name === selectedColor);
+  const displayImage =
+    activeImageIndex === 0
+      ? (matchingColor?.image || product.image)
+      : (colorsList[1]?.image || product.image);
+
+  // Formatted price
+  const priceDisplay =
+    typeof product.price === "number"
+      ? `$${product.price.toFixed(2)}`
+      : product.price.startsWith("$")
+      ? product.price
+      : `$${product.price}`;
+
+  const handleAction = () => {
+    if (mode === "edit") {
+      if (onUpdateBag) {
+        onUpdateBag({
+          id: product.id,
+          color: selectedColor,
+          size: selectedSize,
+          type: selectedType || undefined,
+          qty: quantity
+        });
+      }
+      onClose();
+    } else {
+      if (onAddToBag) {
+        onAddToBag({
+          product,
+          color: selectedColor,
+          size: selectedSize,
+          type: selectedType || undefined,
+          qty: quantity
+        });
+      } else {
+        // Broadcast custom event so Header or cart listener can seamlessly receive the added item
+        const numericPrice =
+          typeof product.price === "number"
+            ? product.price
+            : parseFloat(product.price.replace(/[^0-9.]/g, "")) || 35.0;
+
+        window.dispatchEvent(
+          new CustomEvent("bag:add", {
+            detail: {
+              id: product.id,
+              name: product.name,
+              category: product.tag || product.category || "Featured",
+              color: selectedColor,
+              size: selectedSize,
+              type: selectedType || undefined,
+              qty: quantity,
+              price: numericPrice,
+              image: product.image,
+              availableColors: colorsList,
+              availableSizes: sizesList.map((s) => s.value),
+              availableTypes: product.availableTypes
+            }
+          })
+        );
+      }
+      onClose();
+    }
+  };
 
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
+      className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
       role="dialog"
       aria-modal="true"
     >
       {/* Modal Container */}
-      <div className="bg-white rounded-[32px] w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[92vh] md:max-h-[600px] border border-slate-100 animate-scaleUp">
-        
+      <div className="bg-white rounded-[32px] w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[92vh] md:max-h-[620px] border border-slate-100 animate-scaleUp">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 border border-slate-100 transition-all cursor-pointer focus:outline-none"
+          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 border border-slate-100 transition-all cursor-pointer focus:outline-none shadow-xs"
           aria-label="Close modal"
         >
           <svg className="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,14 +236,14 @@ export default function QuickViewModal({
         </button>
 
         {/* Left Column: Product Image Gallery */}
-        <div className="w-full md:w-1/2 bg-[#f2f4f6] relative flex items-center justify-center p-4 md:p-8 min-h-[220px] md:min-h-[500px] h-[35vh] md:h-auto">
+        <div className="w-full md:w-1/2 bg-[#f2f4f6] relative flex items-center justify-center p-4 md:p-8 min-h-[220px] md:min-h-[500px] h-[35vh] md:h-auto shrink-0">
           {/* Main Image */}
-          <div className="w-full h-full max-h-[200px] md:max-h-[440px] rounded-2xl overflow-hidden relative">
+          <div className="w-full h-full max-h-[220px] md:max-h-[460px] rounded-2xl overflow-hidden relative shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={displayImage}
               alt={product.name}
-              className="w-full h-full object-cover transition-all duration-300"
+              className="w-full h-full object-cover object-top transition-all duration-300"
             />
           </div>
 
@@ -126,15 +261,32 @@ export default function QuickViewModal({
 
         {/* Right Column: Customizer Details */}
         <div className="w-full md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto bg-white flex-1">
-          <div className="space-y-4 md:space-y-6">
-            
+          <div className="space-y-4 md:space-y-5">
+            {/* Header Badge */}
+            <div className="flex items-center gap-2">
+              {mode === "edit" ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-accent/15 text-accent border border-accent/20">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Edit Item in Bag
+                </span>
+              ) : (
+                product.tag && (
+                  <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border border-slate-200/50">
+                    {product.tag}
+                  </span>
+                )
+              )}
+            </div>
+
             {/* Product Header */}
             <div>
-              <h2 className="text-2xl md:text-[26px] font-extrabold text-slate-900 tracking-tight leading-tight">
+              <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight line-clamp-2">
                 {product.name}
               </h2>
               {/* Star Ratings */}
-              <div className="flex items-center gap-1.5 mt-2.5">
+              <div className="flex items-center gap-1.5 mt-2">
                 <span className="text-amber-500">
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
@@ -147,98 +299,144 @@ export default function QuickViewModal({
 
             {/* Price */}
             <div className="text-2xl font-black text-slate-900 tracking-tight">
-              {product.price}
+              {priceDisplay} USD
             </div>
 
             {/* Color Swatches */}
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-                  Color
-                </span>
-                <span className="text-xs font-extrabold text-slate-900">
-                  {selectedColor}
-                </span>
+            {colorsList.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Color
+                  </span>
+                  <span className="text-xs font-extrabold text-slate-900">
+                    {selectedColor}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 md:gap-3 mt-2 flex-wrap">
+                  {colorsList.map((col) => {
+                    const isSelected = selectedColor === col.name;
+                    return (
+                      <button
+                        key={col.name}
+                        onClick={() => {
+                          setSelectedColor(col.name);
+                        }}
+                        className={`w-10 h-10 rounded-full p-[3px] border-2 transition-all cursor-pointer focus:outline-none ${
+                          isSelected
+                            ? "border-slate-900 scale-105 shadow-xs"
+                            : "border-transparent hover:border-slate-300"
+                        }`}
+                        aria-label={`Select color ${col.name}`}
+                        title={col.name}
+                      >
+                        <div
+                          className="w-full h-full rounded-full overflow-hidden flex items-center justify-center border border-black/5"
+                          style={{
+                            backgroundColor: col.hex || "#f1f5f9"
+                          }}
+                        >
+                          {col.image ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={col.image}
+                              alt={col.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            col.hex && <div className="w-full h-full rounded-full" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center gap-2 md:gap-3.5 mt-1.5 md:mt-2.5">
-                {COLORS_DATA.map((col) => {
-                  const isSelected = selectedColor === col.name;
-                  return (
-                    <button
-                      key={col.name}
-                      onClick={() => {
-                        setSelectedColor(col.name);
-                        // Also show a brief image shift
-                        handleNextImage();
-                      }}
-                      className={`w-10 h-10 rounded-full p-[3px] border-2 transition-all cursor-pointer focus:outline-none ${
-                        isSelected ? "border-slate-900 scale-105" : "border-transparent hover:border-slate-300"
-                      }`}
-                      aria-label={`Select color ${col.name}`}
-                    >
-                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={col.image}
-                          alt={col.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
+            )}
+
+            {/* Member / Type Options (e.g. Women, Men, Kids, Baby) */}
+            {product.availableTypes && product.availableTypes.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Member / Type
+                  </span>
+                  <span className="text-xs font-extrabold text-slate-900">
+                    {selectedType}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {product.availableTypes.map((t) => {
+                    const isSelected = selectedType === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setSelectedType(t)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer select-none focus:outline-none ${
+                          isSelected
+                            ? "border-slate-900 bg-slate-900 text-white shadow-xs"
+                            : "border-slate-200 text-slate-700 bg-white hover:border-slate-400"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Size Options Grid */}
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-                  Size
-                </span>
-                <span className="text-xs font-extrabold text-slate-900">
-                  {selectedSize}
-                </span>
+            {sizesList.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Size
+                  </span>
+                  <span className="text-xs font-extrabold text-slate-900">
+                    {selectedSize}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                  {sizesList.map((sz) => {
+                    const isSelected = selectedSize === sz.value;
+                    const isAvailable = sz.available;
+                    return (
+                      <button
+                        key={sz.value}
+                        disabled={!isAvailable}
+                        onClick={() => setSelectedSize(sz.value)}
+                        className={`relative flex items-center justify-center py-2.5 px-1 border rounded-xl text-[11px] font-black tracking-wide transition-all select-none focus:outline-none ${
+                          !isAvailable
+                            ? "border-slate-200 text-slate-300 bg-slate-50/50 cursor-not-allowed"
+                            : isSelected
+                            ? "border-slate-900 text-slate-900 bg-white font-extrabold ring-1 ring-slate-900"
+                            : "border-slate-200 text-slate-800 bg-white hover:border-slate-400 cursor-pointer"
+                        }`}
+                      >
+                        <span className="truncate">{sz.value}</span>
+                        {!isAvailable && (
+                          <svg
+                            className="absolute inset-0 w-full h-full text-slate-200/90"
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                          >
+                            <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="1.5" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-2 mt-1.5 md:mt-2.5">
-                {SIZES_DATA.map((sz) => {
-                  const isSelected = selectedSize === sz.value;
-                  const isAvailable = sz.available;
-                  return (
-                    <button
-                      key={sz.value}
-                      disabled={!isAvailable}
-                      onClick={() => setSelectedSize(sz.value)}
-                      className={`relative flex items-center justify-center py-2.5 border rounded-xl text-[11px] font-black tracking-wide transition-all select-none focus:outline-none ${
-                        !isAvailable
-                          ? "border-slate-200 text-slate-300 bg-slate-50/50 cursor-not-allowed"
-                          : isSelected
-                          ? "border-slate-900 text-slate-900 bg-white font-extrabold"
-                          : "border-slate-200 text-slate-800 bg-white hover:border-slate-400 cursor-pointer"
-                      }`}
-                    >
-                      {sz.value}
-                      {/* Diagonal Cross-out line matching screenshot perfectly using SVG */}
-                      {!isAvailable && (
-                        <svg
-                          className="absolute inset-0 w-full h-full text-slate-200/90"
-                          viewBox="0 0 100 100"
-                          preserveAspectRatio="none"
-                        >
-                          <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="1.5" />
-                        </svg>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Footer Interactive Actions */}
-          <div className="flex items-center gap-3 mt-5 md:mt-8 pt-3 md:pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-slate-100">
             {/* Quantity Pill Box */}
-            <div className="flex items-center border border-slate-200 rounded-full px-3 py-1.5 md:px-4.5 md:py-2.5 bg-white shrink-0">
+            <div className="flex items-center border border-slate-200 rounded-full px-3 py-1.5 md:px-4 md:py-2.5 bg-white shrink-0">
               <button
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 className="text-slate-400 hover:text-slate-700 font-extrabold text-sm md:text-base focus:outline-none w-4 md:w-5 cursor-pointer"
@@ -258,18 +456,39 @@ export default function QuickViewModal({
               </button>
             </div>
 
-            {/* Black Checkout/Add Button */}
+            {/* Remove Option for Edit Mode */}
+            {mode === "edit" && onRemoveItem && (
+              <button
+                type="button"
+                onClick={() => {
+                  onRemoveItem(product.id);
+                  onClose();
+                }}
+                className="p-3 md:p-3.5 rounded-full border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer shrink-0 focus:outline-none"
+                title="Remove item from bag"
+                aria-label="Remove item from bag"
+              >
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Main Action Button */}
             <button
-              onClick={() => {
-                alert(`Added ${quantity} of ${product.name} (Size: ${selectedSize}, Color: ${selectedColor}) to bag!`);
-                onClose();
-              }}
-              className="flex-1 bg-accent hover:bg-accent-hover text-white font-extrabold text-[11px] md:text-xs uppercase tracking-widest py-3.5 md:py-4.5 px-4 md:px-6 rounded-full shadow-lg shadow-accent/10 active:scale-[0.99] transition-all cursor-pointer text-center"
+              onClick={handleAction}
+              className="flex-1 bg-accent hover:bg-accent-hover text-white font-extrabold text-[11px] md:text-xs uppercase tracking-widest py-3.5 md:py-4 px-4 rounded-full shadow-lg shadow-accent/15 active:scale-[0.99] transition-all cursor-pointer text-center"
             >
-              ADD TO BAG - {product.price} USD
+              {mode === "edit"
+                ? `UPDATE BAG - ${priceDisplay} USD`
+                : `ADD TO BAG - ${priceDisplay} USD`}
             </button>
           </div>
-
         </div>
       </div>
     </div>

@@ -64,9 +64,8 @@ export default function ThemeSwitcher() {
                 key={theme.id}
                 onClick={() => changeTheme(theme.id)}
                 title={theme.name}
-                className={`group relative w-7 h-7 rounded-full p-[2px] border-2 transition-all cursor-pointer focus:outline-none hover:scale-105 active:scale-95 ${
-                  isSelected ? "border-slate-800" : "border-slate-200/50 hover:border-slate-400"
-                }`}
+                className={`group relative w-7 h-7 rounded-full p-[2px] border-2 transition-all cursor-pointer focus:outline-none hover:scale-105 active:scale-95 ${isSelected ? "border-slate-800" : "border-slate-200/50 hover:border-slate-400"
+                  }`}
                 aria-label={`Switch to ${theme.name} theme`}
               >
                 <div className="w-full h-full rounded-full flex overflow-hidden rotate-45">
