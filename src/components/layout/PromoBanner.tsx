@@ -126,10 +126,10 @@ export default function PromoBanner() {
   const currentSlide = SLIDES_DATA[currentSlideIndex];
 
   return (
-    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 group select-none">
+    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 group select-none bg-white pt-5.5 rounded-t-3xl sm:rounded-t-[36px]">
       {/* Banner Container */}
       <div className={`relative w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden transition-colors duration-500 shadow-md ${currentSlide.bgClass} flex items-center justify-between`}>
-        
+
         {/* Left Section: Overlapping product images */}
         <div className="hidden lg:flex items-center justify-center w-1/4 h-full relative pl-8">
           <div className="relative w-full h-[80%] flex items-center justify-start gap-4">
@@ -237,11 +237,10 @@ export default function PromoBanner() {
             <button
               key={slide.id}
               onClick={() => setCurrentSlideIndex(index)}
-              className={`w-3.5 h-3.5 rounded-full border transition-all duration-300 cursor-pointer ${
-                isActive
-                  ? "bg-primary border-primary scale-110"
-                  : "bg-transparent border-slate-300 hover:border-slate-400"
-              }`}
+              className={`w-3.5 h-3.5 rounded-full border transition-all duration-300 cursor-pointer ${isActive
+                ? "bg-primary border-primary scale-110"
+                : "bg-transparent border-slate-300 hover:border-slate-400"
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           );

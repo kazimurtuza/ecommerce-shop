@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import CategoryBar from "@/components/layout/CategoryBar";
 import PromoBanner from "@/components/layout/PromoBanner";
+import OfferSection from "@/components/offer/OfferSection";
 import ProductCard from "@/components/product/ProductCard";
 import QuickViewModal from "@/components/product/QuickViewModal";
 
@@ -106,6 +107,7 @@ export default function HomePage() {
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-between">
       <CategoryBar />
       <PromoBanner />
+      <OfferSection />
 
       {/* Featured Products */}
       <section className="py-16 bg-white px-6 w-full">

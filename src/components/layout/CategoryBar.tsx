@@ -246,9 +246,9 @@ export default function CategoryBar() {
 
   const handleCategoryMouseEnter = (e: React.MouseEvent<HTMLDivElement>, category: Category) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
+
     setHoveredCategory(category);
-    
+
     if (category.subcategories && category.subcategories.length > 0) {
       const firstSub = category.subcategories.find(sub => sub.name !== "All") || category.subcategories[0];
       setHoveredSubCategory(firstSub);
@@ -323,11 +323,10 @@ export default function CategoryBar() {
                 <Link
                   href={category.slug ? `/categories/${category.slug}` : "/"}
                   onClick={() => setActiveCategory(category.name)}
-                  className={`text-[13px] md:text-sm font-semibold tracking-wide transition-colors relative py-3 ${
-                    isActive || isHovered
+                  className={`text-[13px] md:text-sm font-semibold tracking-wide transition-colors relative py-3 ${isActive || isHovered
                       ? "text-primary"
                       : "text-slate-600 hover:text-primary"
-                  }`}
+                    }`}
                 >
                   {category.name}
                   {/* Underline Indicator */}
@@ -370,11 +369,10 @@ export default function CategoryBar() {
                   <div
                     key={sub.slug}
                     onMouseEnter={() => setHoveredSubCategory(sub)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 cursor-pointer ${
-                      isSubHovered
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 cursor-pointer ${isSubHovered
                         ? "bg-primary-light text-primary"
                         : "text-slate-700 hover:bg-slate-50 hover:text-primary"
-                    }`}
+                      }`}
                   >
                     <Link
                       href={`/categories/${hoveredCategory.slug}/${sub.slug}`}

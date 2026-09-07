@@ -36,6 +36,36 @@ export default function CartPage() {
       qty: 1,
       image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=240&fit=crop&q=80",
       category: "Accessories"
+    },
+    {
+      id: 3,
+      name: "Moogle Daydream TM Smartwatch - Lavender Edition",
+      price: 599,
+      originalPrice: 750,
+      size: "42mm",
+      qty: 1,
+      image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=240&fit=crop&q=80",
+      category: "Devices"
+    },
+    {
+      id: 4,
+      name: "Wireless Active Noise-Cancelling Headphones",
+      price: 1450,
+      originalPrice: 2100,
+      size: "One Size",
+      qty: 1,
+      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=240&fit=crop&q=80",
+      category: "Electronics"
+    },
+    {
+      id: 5,
+      name: "Organic Hydrating Glow Face Serum 50ml",
+      price: 850,
+      originalPrice: 1100,
+      size: "50ml",
+      qty: 2,
+      image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=240&fit=crop&q=80",
+      category: "Beauty"
     }
   ]);
 
