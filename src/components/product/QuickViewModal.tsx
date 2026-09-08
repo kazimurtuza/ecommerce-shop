@@ -21,6 +21,9 @@ export interface QuickViewProduct {
   slug?: string;
   image: string;
   category?: string;
+  department?: string;
+  subCategory?: string;
+  fabric?: string;
   availableColors?: ProductColor[];
   availableTypes?: string[];
   availableSizes?: (string | ProductSize)[];

@@ -1,14 +1,31 @@
 "use client";
 
+export interface ProductVariant {
+  id: string;
+  color: string;
+  colorHex?: string;
+  size: string;
+  sku?: string;
+  price?: string;
+  stockPrice?: string;
+  stock: number;
+  image?: string;
+}
+
 export interface Product {
   id: number;
   name: string;
   price: string; // formats like "$18.99" or "18.99"
+  stockPrice?: string;
   tag: string;
+  category?: string;
+  subCategory?: string;
+  brand?: string;
   stock: number;
   status: "Published" | "Draft";
   image: string;
   description?: string;
+  variants?: ProductVariant[];
 }
 
 export interface OrderItem {
@@ -52,37 +69,136 @@ const INITIAL_PRODUCTS: Product[] = [
     id: 1,
     name: "Matching Family Sleeveless Floral Outfits Black",
     price: "$18.99",
+    stockPrice: "$11.50",
     tag: "Family Matching",
+    category: "Women",
+    subCategory: "Kurti Tunic And Tops",
+    brand: "Aarong",
     stock: 24,
     status: "Published",
     image: "https://images.unsplash.com/photo-1604176354204-9268737828e4?w=450&h=560&fit=crop&q=80",
     description: "Perfect matching floral outfits for the family. Crafted from breathable cotton blend fabric featuring a beautiful sleeveless floral pattern. Great for summer outings.",
+    variants: [
+      {
+        id: "var-1-1",
+        color: "Floral Black",
+        colorHex: "#1e1e1e",
+        size: "M",
+        sku: "FLR-BLK-M",
+        price: "$18.99",
+        stockPrice: "$11.50",
+        stock: 10,
+        image: "https://images.unsplash.com/photo-1604176354204-9268737828e4?w=450&h=560&fit=crop&q=80",
+      },
+      {
+        id: "var-1-2",
+        color: "Blush Pink",
+        colorHex: "#f472b6",
+        size: "L",
+        sku: "FLR-PNK-L",
+        price: "$19.99",
+        stockPrice: "$12.00",
+        stock: 8,
+        image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=450&h=560&fit=crop&q=80",
+      },
+      {
+        id: "var-1-3",
+        color: "Mint Green",
+        colorHex: "#86efac",
+        size: "S",
+        sku: "FLR-MNT-S",
+        price: "$18.99",
+        stockPrice: "$11.50",
+        stock: 6,
+        image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=450&h=560&fit=crop&q=80",
+      },
+    ],
   },
   {
     id: 2,
     name: "Matching Family Polo Collar Sleeveless Floral Outfits",
     price: "$18.99",
+    stockPrice: "$12.00",
     tag: "Family Matching",
-    stock: 5,
+    category: "Men",
+    subCategory: "Polo Shirt",
+    brand: "Yellow",
+    stock: 14,
     status: "Published",
     image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=450&h=560&fit=crop&q=80",
     description: "Cute polo collar summer outfits for parent and child matching. High quality comfortable fabric.",
+    variants: [
+      {
+        id: "var-2-1",
+        color: "Navy Blue",
+        colorHex: "#1e3a8a",
+        size: "L",
+        sku: "POLO-NVY-L",
+        price: "$18.99",
+        stockPrice: "$12.00",
+        stock: 8,
+        image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=450&h=560&fit=crop&q=80",
+      },
+      {
+        id: "var-2-2",
+        color: "Sky Blue",
+        colorHex: "#38bdf8",
+        size: "M",
+        sku: "POLO-SKY-M",
+        price: "$18.99",
+        stockPrice: "$12.00",
+        stock: 6,
+        image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=450&h=560&fit=crop&q=80",
+      },
+    ],
   },
   {
     id: 3,
     name: "Disney Matching Family Stripe Outfits",
     price: "$15.99",
+    stockPrice: "$9.50",
     tag: "Mickey & Friends",
-    stock: 0,
+    category: "Kids",
+    subCategory: "Matching Outfits",
+    brand: "Disney",
+    stock: 18,
     status: "Published",
     image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=450&h=560&fit=crop&q=80",
     description: "Adorable Mickey & Friends themed stripes matching clothes. Officially licensed design.",
+    variants: [
+      {
+        id: "var-3-1",
+        color: "Stripe White/Red",
+        colorHex: "#ef4444",
+        size: "2T",
+        sku: "DIS-STR-2T",
+        price: "$15.99",
+        stockPrice: "$9.50",
+        stock: 10,
+        image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=450&h=560&fit=crop&q=80",
+      },
+      {
+        id: "var-3-2",
+        color: "Stripe Yellow",
+        colorHex: "#eab308",
+        size: "3T",
+        sku: "DIS-YEL-3T",
+        price: "$15.99",
+        stockPrice: "$9.50",
+        stock: 8,
+        image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=450&h=560&fit=crop&q=80",
+      },
+    ],
   },
   {
     id: 4,
     name: "Matching Family Tropical Outfits Deep Blue",
     price: "$15.99",
+    stockPrice: "$10.00",
     tag: "Family Matching",
+    category: "Women",
+    subCategory: "Frocks & Dresses",
+    brand: "Sailor",
     stock: 45,
     status: "Draft",
     image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=450&h=560&fit=crop&q=80",
@@ -92,7 +208,11 @@ const INITIAL_PRODUCTS: Product[] = [
     id: 5,
     name: "Matching Family Sunflower Sleeveless Outfits",
     price: "$16.99",
+    stockPrice: "$10.50",
     tag: "Family Matching",
+    category: "Kids",
+    subCategory: "Frocks & Dresses",
+    brand: "Taaga",
     stock: 12,
     status: "Published",
     image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=450&h=560&fit=crop&q=80",
@@ -243,7 +363,32 @@ export const getProducts = (): Product[] => {
     localStorage.setItem("hb_products", JSON.stringify(INITIAL_PRODUCTS));
     return INITIAL_PRODUCTS;
   }
-  return JSON.parse(stored);
+  try {
+    const parsed: Product[] = JSON.parse(stored);
+    let needsUpdate = false;
+    const enriched = parsed.map((p) => {
+      if ((!p.variants || p.variants.length === 0) && (p.id === 1 || p.id === 2 || p.id === 3)) {
+        const init = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
+        if (init?.variants) {
+          needsUpdate = true;
+          return {
+            ...p,
+            variants: init.variants,
+            subCategory: p.subCategory || init.subCategory,
+            brand: p.brand || init.brand,
+            stockPrice: p.stockPrice || init.stockPrice,
+          };
+        }
+      }
+      return p;
+    });
+    if (needsUpdate) {
+      localStorage.setItem("hb_products", JSON.stringify(enriched));
+    }
+    return enriched;
+  } catch {
+    return INITIAL_PRODUCTS;
+  }
 };
 
 export const saveProducts = (products: Product[]) => {
