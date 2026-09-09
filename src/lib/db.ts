@@ -10,6 +10,7 @@ export interface ProductVariant {
   stockPrice?: string;
   stock: number;
   image?: string;
+  isDefault?: boolean;
 }
 
 export interface Product {
@@ -24,6 +25,7 @@ export interface Product {
   stock: number;
   status: "Published" | "Draft";
   image: string;
+  images?: string[]; // all product gallery images
   description?: string;
   variants?: ProductVariant[];
 }

@@ -182,8 +182,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setVariants((prev) => [...prev, newVariant]);
   };
 
+  const handleSetDefaultVariant = (id: string) => {
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        isDefault: v.id === id,
+      }))
+    );
+  };
+
   const handleRemoveVariant = (id: string) => {
-    setVariants((prev) => prev.filter((v) => v.id !== id));
+    setVariants((prev) => {
+      const remaining = prev.filter((v) => v.id !== id);
+      if (remaining.length > 0 && !remaining.some((v) => v.isDefault)) {
+        remaining[0] = { ...remaining[0], isDefault: true };
+      }
+      return remaining;
+    });
   };
 
   const handleUpdateVariant = (
@@ -491,7 +506,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <th className="py-3 px-3">Selling ($)</th>
                     <th className="py-3 px-3">Stock Price ($)</th>
                     <th className="py-3 px-3">Stock Qty</th>
-                    <th className="py-3 px-3 text-center">Action</th>
+                    <th className="py-3 px-3 text-center">Default / Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -720,17 +735,37 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                           className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                         />
                       </td>
+                      {/* Default Checkbox & Remove Button */}
                       <td className="py-3 px-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveVariant(v.id)}
-                          className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
-                          title="Remove variant"
-                        >
-                          <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                          </svg>
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <label
+                            className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400"
+                            title={v.isDefault ? "Default Variant" : "Mark as Default Variant"}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!v.isDefault}
+                              onChange={() => handleSetDefaultVariant(v.id)}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-violet-600 focus:ring-violet-500 cursor-pointer accent-violet-600"
+                            />
+                            <span className={`text-[10px] ${v.isDefault ? "text-violet-600 dark:text-violet-400 font-bold" : "text-slate-400 font-normal"}`}>
+                              Default
+                            </span>
+                          </label>
+
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariant(v.id)}
+                            className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                            title="Remove variant"
+                          >
+                            <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

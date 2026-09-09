@@ -61,12 +61,31 @@ export default function NewProductPage() {
     status: "Published" as "Published" | "Draft",
   });
 
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([
+    {
+      id: Date.now().toString(),
+      color: "Black",
+      colorHex: "#000000",
+      size: "M",
+      sku: "SKU-VAR-1",
+      price: "",
+      stockPrice: "",
+      stock: 10,
+      image: "",
+      isDefault: true,
+    },
+  ]);
 
   // Image Cropper State
   const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropTarget, setCropTarget] = useState<{ type: "variant"; id: string } | { type: "primary" } | null>(null);
+  const [cropTarget, setCropTarget] = useState<
+    { type: "variant"; id: string } | { type: "gallery"; index: number } | null
+  >(null);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+
+  // Multi-image gallery state
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [defaultImageIndex, setDefaultImageIndex] = useState<number>(0);
 
   const handleVariantFileChange = (vId: string, file: File) => {
     const reader = new FileReader();
@@ -80,16 +99,50 @@ export default function NewProductPage() {
     reader.readAsDataURL(file);
   };
 
-  const handlePrimaryFileChange = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setFormData((prev) => ({ ...prev, image: dataUrl }));
-      setImageToCrop(dataUrl);
-      setCropTarget({ type: "primary" });
-      setCropperOpen(true);
-    };
-    reader.readAsDataURL(file);
+  // Add multiple images to gallery
+  const handleAddGalleryImages = (files: FileList) => {
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setProductImages((prev) => [...prev, dataUrl]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Add image by URL to gallery
+  const handleAddGalleryUrl = () => {
+    const url = window.prompt("Paste image URL (e.g. https://images.unsplash.com/...):");
+    if (url && url.trim()) {
+      setProductImages((prev) => [...prev, url.trim()]);
+    }
+  };
+
+  // Remove an image from gallery
+  const handleRemoveGalleryImage = (index: number) => {
+    setProductImages((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      // adjust default index
+      if (defaultImageIndex >= next.length) {
+        setDefaultImageIndex(Math.max(0, next.length - 1));
+      } else if (index < defaultImageIndex) {
+        setDefaultImageIndex((d) => d - 1);
+      }
+      return next;
+    });
+  };
+
+  // Set default/primary image
+  const handleSetDefaultImage = (index: number) => {
+    setDefaultImageIndex(index);
+  };
+
+  // Open cropper for gallery image
+  const handleCropGalleryImage = (index: number) => {
+    setImageToCrop(productImages[index]);
+    setCropTarget({ type: "gallery", index });
+    setCropperOpen(true);
   };
 
   const handleSetVariantImageUrl = (vId: string) => {
@@ -104,7 +157,7 @@ export default function NewProductPage() {
 
   const handleOpenCropperForExisting = (
     imageUrl: string,
-    target: { type: "variant"; id: string } | { type: "primary" }
+    target: { type: "variant"; id: string } | { type: "gallery"; index: number }
   ) => {
     setImageToCrop(imageUrl);
     setCropTarget(target);
@@ -116,8 +169,10 @@ export default function NewProductPage() {
 
     if (cropTarget.type === "variant") {
       handleUpdateVariant(cropTarget.id, "image", croppedDataUrl);
-    } else if (cropTarget.type === "primary") {
-      setFormData((prev) => ({ ...prev, image: croppedDataUrl }));
+    } else if (cropTarget.type === "gallery") {
+      setProductImages((prev) =>
+        prev.map((img, i) => (i === cropTarget.index ? croppedDataUrl : img))
+      );
     }
   };
 
@@ -125,10 +180,33 @@ export default function NewProductPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-sync selling price to variants when main price changes
+      if (name === "price") {
+        setVariants((prevVariants) =>
+          prevVariants.map((v) =>
+            v.price === "" || v.price === prev.price
+              ? { ...v, price: value }
+              : v
+          )
+        );
+      }
+
+      // Auto-sync stock price to variants when main stock price changes
+      if (name === "stockPrice") {
+        setVariants((prevVariants) =>
+          prevVariants.map((v) =>
+            v.stockPrice === "" || v.stockPrice === prev.stockPrice
+              ? { ...v, stockPrice: value }
+              : v
+          )
+        );
+      }
+
+      return updated;
+    });
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,16 +234,33 @@ export default function NewProductPage() {
       colorHex: "#000000",
       size: "M",
       sku: defaultSku,
-      price: formData.price || "0.00",
-      stockPrice: formData.stockPrice || "0.00",
+      price: "",
+      stockPrice: "",
       stock: 10,
       image: "",
+      isDefault: variants.length === 0,
     };
     setVariants((prev) => [...prev, newVariant]);
   };
 
+  const handleSetDefaultVariant = (id: string) => {
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        isDefault: v.id === id,
+      }))
+    );
+  };
+
   const handleRemoveVariant = (id: string) => {
-    setVariants((prev) => prev.filter((v) => v.id !== id));
+    setVariants((prev) => {
+      const remaining = prev.filter((v) => v.id !== id);
+      // If the removed variant was the default, make the first remaining variant default
+      if (remaining.length > 0 && !remaining.some((v) => v.isDefault)) {
+        remaining[0] = { ...remaining[0], isDefault: true };
+      }
+      return remaining;
+    });
   };
 
   const handleUpdateVariant = (
@@ -203,6 +298,12 @@ export default function NewProductPage() {
     const finalStock =
       variants.length > 0 ? totalVariantStock : parseInt(formData.stock) || 0;
 
+    // Determine primary image from gallery
+    const primaryImage =
+      productImages.length > 0
+        ? productImages[defaultImageIndex] || productImages[0]
+        : "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=450&h=560&fit=crop&q=80";
+
     const newProduct: Product = {
       id: newId,
       name: formData.name,
@@ -214,11 +315,16 @@ export default function NewProductPage() {
       stockPrice: stockPriceFormatted,
       stock: finalStock,
       status: formData.status,
-      image:
-        formData.image ||
-        "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=450&h=560&fit=crop&q=80",
+      image: primaryImage,
+      images: productImages.length > 0 ? productImages : undefined,
       description: formData.description,
-      variants: variants.length > 0 ? variants : undefined,
+      variants: variants.length > 0
+        ? variants.map((v) => ({
+            ...v,
+            price: v.price || formData.price || "0.00",
+            stockPrice: v.stockPrice || formData.stockPrice || "0.00",
+          }))
+        : undefined,
     };
 
     saveProducts([...currentProducts, newProduct]);
@@ -410,9 +516,8 @@ export default function NewProductPage() {
                 onChange={handleChange}
                 disabled={variants.length > 0}
                 placeholder="10"
-                className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all ${
-                  variants.length > 0 ? "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-900" : ""
-                }`}
+                className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all ${variants.length > 0 ? "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-900" : ""
+                  }`}
                 min="0"
                 required
               />
@@ -489,11 +594,11 @@ export default function NewProductPage() {
                     <th className="py-3 px-3">Selling ($)</th>
                     <th className="py-3 px-3">Stock Price ($)</th>
                     <th className="py-3 px-3">Stock Qty</th>
-                    <th className="py-3 px-3 text-center">Action</th>
+                    <th className="py-3 px-3 text-center">Default / Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {variants.map((v) => (
+                  {variants.map((v, vIdx) => (
                     <tr key={v.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                       {/* Variant Image & Crop Option */}
                       <td className="py-3 px-3 min-w-[150px]">
@@ -606,7 +711,7 @@ export default function NewProductPage() {
                         ) : (
                           <div className="flex items-center gap-1.5">
                             <label
-                              htmlFor={`var-file-add-${v.id}`}
+                              htmlFor={`var-file-add-${vIdx}`}
                               className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl border-2 border-dashed border-violet-400 dark:border-violet-600 bg-violet-50/80 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 cursor-pointer transition-all text-[11px] font-bold shadow-xs hover:border-violet-600"
                               title="Click to select image file from computer"
                             >
@@ -615,7 +720,7 @@ export default function NewProductPage() {
                               </svg>
                               <span>Upload Image</span>
                               <input
-                                id={`var-file-add-${v.id}`}
+                                id={`var-file-add-${vIdx}`}
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
@@ -684,11 +789,11 @@ export default function NewProductPage() {
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold">$</span>
                           <input
                             type="text"
-                            value={v.price || ""}
-                            onChange={(e) =>
-                              handleUpdateVariant(v.id, "price", e.target.value)
-                            }
-                            placeholder="38.99"
+                            value={v.price || formData.price || ""}
+                            onChange={(e) => {
+                              handleUpdateVariant(v.id, "price", e.target.value);
+                            }}
+                            placeholder={formData.price || "38.99"}
                             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-5 pr-2 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                           />
                         </div>
@@ -700,11 +805,11 @@ export default function NewProductPage() {
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold">$</span>
                           <input
                             type="text"
-                            value={v.stockPrice || ""}
-                            onChange={(e) =>
-                              handleUpdateVariant(v.id, "stockPrice", e.target.value)
-                            }
-                            placeholder="22.50"
+                            value={v.stockPrice || formData.stockPrice || ""}
+                            onChange={(e) => {
+                              handleUpdateVariant(v.id, "stockPrice", e.target.value);
+                            }}
+                            placeholder={formData.stockPrice || "22.50"}
                             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-5 pr-2 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                           />
                         </div>
@@ -727,18 +832,37 @@ export default function NewProductPage() {
                         />
                       </td>
 
-                      {/* Remove Button */}
+                      {/* Default Checkbox & Remove Button */}
                       <td className="py-3 px-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveVariant(v.id)}
-                          className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
-                          title="Remove variant"
-                        >
-                          <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                          </svg>
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <label
+                            className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400"
+                            title={v.isDefault ? "Default Variant" : "Mark as Default Variant"}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!v.isDefault}
+                              onChange={() => handleSetDefaultVariant(v.id)}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-violet-600 focus:ring-violet-500 cursor-pointer accent-violet-600"
+                            />
+                            <span className={`text-[10px] ${v.isDefault ? "text-violet-600 dark:text-violet-400 font-bold" : "text-slate-400 font-normal"}`}>
+                              Default
+                            </span>
+                          </label>
+
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariant(v.id)}
+                            className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                            title="Remove variant"
+                          >
+                            <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -754,41 +878,49 @@ export default function NewProductPage() {
             4. Media & Display Details
           </h2>
 
-          {/* Primary Image Upload & URL */}
+          {/* Multi-Image Gallery Upload */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Primary Product Image
-              </label>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Product Images Gallery
+                  {productImages.length > 0 && (
+                    <span className="ml-2 bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full normal-case tracking-normal">
+                      {productImages.length} {productImages.length === 1 ? "image" : "images"}
+                    </span>
+                  )}
+                </label>
+                <p className="text-[10px] text-slate-400 mt-0.5">Upload multiple images. Click the star ★ to set the primary/default image shown on the store.</p>
+              </div>
               <div className="flex items-center gap-2">
-                {formData.image && (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenCropperForExisting(formData.image, { type: "primary" })}
-                    className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M3.75 16.5V18A2.25 2.25 0 006 20.25h1.5M16.5 20.25H18A2.25 2.25 0 0020.25 18v-1.5M20.25 7.5V6A2.25 2.25 0 0018 3.75h-1.5" />
-                    </svg>
-                    <span>Crop Image</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleAddGalleryUrl}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                  </svg>
+                  <span>Add URL</span>
+                </button>
                 <label
-                  htmlFor="primary-image-upload"
+                  htmlFor="gallery-image-upload"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-900/40 rounded-xl text-xs font-bold hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors cursor-pointer"
                 >
                   <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
-                  <span>Upload & Crop Image</span>
+                  <span>Upload Images</span>
                   <input
-                    id="primary-image-upload"
+                    id="gallery-image-upload"
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePrimaryFileChange(file);
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleAddGalleryImages(e.target.files);
+                      }
                       e.target.value = "";
                     }}
                   />
@@ -796,61 +928,119 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            <input
-              type="text"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="Paste Image URL or click 'Upload & Crop Image' above"
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
-            />
-
-            {formData.image && (
-              <div
-                onClick={() => handleOpenCropperForExisting(formData.image, { type: "primary" })}
-                className="mt-3 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-950/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-all group"
-                title="Click image to Crop & Resize"
+            {/* Gallery Grid */}
+            {productImages.length === 0 ? (
+              <label
+                htmlFor="gallery-image-upload-empty"
+                className="flex flex-col items-center justify-center gap-3 w-full border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center cursor-pointer hover:border-violet-400 hover:bg-violet-50/30 dark:hover:bg-violet-950/20 transition-all group"
               >
-                <div className="relative overflow-hidden rounded-xl">
-                  <img
-                    src={formData.image}
-                    alt="Preview"
-                    className="w-16 h-20 object-cover border border-slate-200 dark:border-slate-800 shadow-2xs group-hover:scale-105 transition-transform"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
+                <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-950/50 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-10.5 6h19.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75H2.25a.75.75 0 00-.75.75v11.25c0 .414.336.75.75.75z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload product images</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, WEBP — Multiple files supported</p>
+                </div>
+                <input
+                  id="gallery-image-upload-empty"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleAddGalleryImages(e.target.files);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {productImages.map((img, index) => (
+                  <div
+                    key={index}
+                    className={`relative group rounded-2xl overflow-hidden border-2 transition-all ${
+                      defaultImageIndex === index
+                        ? "border-violet-500 dark:border-violet-400 shadow-md shadow-violet-200 dark:shadow-violet-900/40"
+                        : "border-slate-200 dark:border-slate-800 hover:border-violet-300"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Product image ${index + 1}`}
+                      className="w-full aspect-[3/4] object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = ""; }}
+                    />
+
+                    {/* Default badge */}
+                    {defaultImageIndex === index && (
+                      <div className="absolute top-1.5 left-1.5 bg-violet-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md tracking-wide">
+                        ★ DEFAULT
+                      </div>
+                    )}
+
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                      {/* Set as default */}
+                      {defaultImageIndex !== index && (
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefaultImage(index)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                          title="Set as primary/default image"
+                        >
+                          ★ Set Default
+                        </button>
+                      )}
+                      {/* Crop */}
+                      <button
+                        type="button"
+                        onClick={() => handleCropGalleryImage(index)}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                        title="Crop & resize image"
+                      >
+                        ✂️ Crop
+                      </button>
+                      {/* Remove */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGalleryImage(index)}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                        title="Remove image"
+                      >
+                        🗑 Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add more images tile */}
+                <label
+                  htmlFor="gallery-image-upload-more"
+                  className="flex flex-col items-center justify-center gap-2 aspect-[3/4] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-violet-400 hover:bg-violet-50/40 dark:hover:bg-violet-950/20 cursor-pointer transition-all text-slate-400 hover:text-violet-500"
+                  title="Add more images"
+                >
+                  <svg className="w-6 h-6 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  <span className="text-[10px] font-bold">Add More</span>
+                  <input
+                    id="gallery-image-upload-more"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleAddGalleryImages(e.target.files);
+                      }
+                      e.target.value = "";
                     }}
                   />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <span className="text-[10px] font-bold bg-violet-600 px-1.5 py-0.5 rounded-md">Crop</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Current Primary Image</p>
-                  <p className="text-[11px] text-slate-400">Used as the main thumbnail on store catalog and product details.</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenCropperForExisting(formData.image, { type: "primary" });
-                      }}
-                      className="text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:underline cursor-pointer flex items-center gap-1"
-                    >
-                      ✂️ Crop & Adjust Size
-                    </button>
-                    <span className="text-slate-300 dark:text-slate-700">|</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((prev) => ({ ...prev, image: "" }));
-                      }}
-                      className="text-[11px] font-semibold text-rose-500 hover:underline cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
+                </label>
               </div>
             )}
           </div>
@@ -930,9 +1120,9 @@ export default function NewProductPage() {
         initialRatio="3:4"
         onCropComplete={handleCropComplete}
         title={
-          cropTarget?.type === "primary"
-            ? "Crop Primary Product Image (Size-Wise)"
-            : "Crop Variant Image (Size-Wise)"
+          cropTarget?.type === "gallery"
+            ? "Crop Product Gallery Image"
+            : "Crop Variant Image"
         }
       />
     </div>

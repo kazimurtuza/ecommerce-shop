@@ -238,45 +238,32 @@ export default function ColorCombobox({
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {/* Trigger Button */}
-      <div className="flex items-center gap-1.5 w-full">
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={() => (isOpen ? handleClose() : handleOpen())}
-          className="flex-1 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-violet-500 text-left transition-all cursor-pointer shadow-xs group"
-          title={`Color: ${currentColorName} (${currentColorHex}) - Click to change`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs"
-              style={{ backgroundColor: currentColorHex }}
-            />
-            <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
-              {value ? value : <span className="text-slate-400 font-normal">Select color</span>}
-            </span>
-          </div>
-          <svg
-            className={`w-3.5 h-3.5 text-slate-400 group-hover:text-violet-500 transition-transform duration-150 shrink-0 ${
-              isOpen ? "rotate-180 text-violet-600" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {/* Mini native color picker shortcut for quick fine-tuning */}
-        <div className="relative shrink-0" title="Fine-tune Hex Color">
-          <input
-            type="color"
-            value={currentColorHex}
-            onChange={(e) => onChange(value || "Custom", e.target.value)}
-            className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer p-0 bg-transparent shrink-0 block overflow-hidden"
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (isOpen ? handleClose() : handleOpen())}
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-violet-500 text-left transition-all cursor-pointer shadow-xs group"
+        title={`Color: ${currentColorName} (${currentColorHex}) - Click to change`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs"
+            style={{ backgroundColor: currentColorHex }}
           />
+          <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
+            {value ? value : <span className="text-slate-400 font-normal">Select color</span>}
+          </span>
         </div>
-      </div>
+        <svg
+          className={`w-3.5 h-3.5 text-slate-400 group-hover:text-violet-500 transition-transform duration-150 shrink-0 ${isOpen ? "rotate-180 text-violet-600" : ""
+            }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
       {/* Floating Dropdown Popover via Portal */}
       {isOpen &&
@@ -346,9 +333,8 @@ export default function ColorCombobox({
                       key={c.name + c.hex}
                       type="button"
                       onClick={() => handleSelectColor(c)}
-                      className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/40 ${
-                        isSelected ? "bg-violet-50/80 dark:bg-violet-950/60 font-bold" : ""
-                      }`}
+                      className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/40 ${isSelected ? "bg-violet-50/80 dark:bg-violet-950/60 font-bold" : ""
+                        }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span
