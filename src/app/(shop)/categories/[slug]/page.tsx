@@ -113,8 +113,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen py-12 px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-slate-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto">
         <div className="mb-6">
           <Link href="/" className="text-sm font-semibold text-accent hover:text-accent-hover transition-colors">
             &larr; Back to Home

@@ -82,7 +82,7 @@ export default function OfferSection() {
       {/* Subtle dotted background matching the screenshot */}
       <div className="absolute inset-0 bg-[radial-gradient(#d1d5db_1.2px,transparent_1.2px)] [background-size:22px_22px] opacity-60 pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Mobile Horizontal Carousel & Desktop 5-Column Grid */}
         <div className="flex sm:grid overflow-x-auto sm:overflow-visible pb-2 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none snap-x snap-mandatory gap-3 sm:gap-3.5 lg:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {OFFER_CARDS.map((card) => (

@@ -126,7 +126,7 @@ export default function PromoBanner() {
   const currentSlide = SLIDES_DATA[currentSlideIndex];
 
   return (
-    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 group select-none bg-white pt-5.5 rounded-t-3xl sm:rounded-t-[36px]">
+    <div className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-4 group select-none bg-white pt-5.5 rounded-t-3xl sm:rounded-t-[36px]">
       {/* Banner Container */}
       <div className={`relative w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden transition-colors duration-500 shadow-md ${currentSlide.bgClass} flex items-center justify-between`}>
 

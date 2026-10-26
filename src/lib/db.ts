@@ -1,5 +1,52 @@
 "use client";
 
+// ─── Attribute System ───────────────────────────────────────────────────────
+
+export interface Attribute {
+  id: number;
+  name: string;
+  slug: string;
+  type: "select" | "color" | "text";
+  values: AttributeValue[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttributeValue {
+  id: number;
+  attribute_id: number;
+  value: string;
+  slug: string;
+  color_hex?: string; // for color-type attributes
+  created_at: string;
+}
+
+// Unit model
+export interface Unit {
+  id: number;
+  name: string;
+  symbol: string;
+  created_at: string;
+}
+
+// Which attributes a product uses (e.g. T-Shirt → Color, Size)
+export interface ProductAttribute {
+  id: number;
+  product_id: number;
+  attribute_id: number;
+  sort_order: number;
+}
+
+// The actual attribute value for a specific variant
+export interface VariantAttributeValue {
+  id: number;
+  variant_id: string;
+  attribute_id: number;
+  attribute_value_id: number;
+}
+
+// ─── Product / Variant ───────────────────────────────────────────────────────
+
 export interface ProductVariant {
   id: string;
   color: string;
@@ -11,6 +58,10 @@ export interface ProductVariant {
   stock: number;
   image?: string;
   isDefault?: boolean;
+  // New variant attribute system
+  unit_id?: number;
+  unit_quantity?: number;
+  attribute_values?: VariantAttributeValue[];
 }
 
 export interface Product {
@@ -19,6 +70,7 @@ export interface Product {
   price: string; // formats like "$18.99" or "18.99"
   stockPrice?: string;
   tag: string;
+  tags?: string[];
   category?: string;
   subCategory?: string;
   brand?: string;
@@ -28,6 +80,8 @@ export interface Product {
   images?: string[]; // all product gallery images
   description?: string;
   variants?: ProductVariant[];
+  // New attribute system
+  product_attributes?: ProductAttribute[];
 }
 
 export interface OrderItem {
@@ -357,6 +411,137 @@ const INITIAL_USERS: User[] = [
   { id: 4, name: "Mahmudul Hasan", email: "mahmud@example.com", role: "Moderator", registeredDate: "Jul 10, 2026", status: "Active" },
   { id: 5, name: "Nusrat Jahan", email: "nusrat@example.com", role: "Customer", registeredDate: "Aug 20, 2026", status: "Suspended" },
 ];
+
+// ─── Default Attributes ─────────────────────────────────────────────────────
+
+const INITIAL_ATTRIBUTES: Attribute[] = [
+  {
+    id: 1,
+    name: "Color",
+    slug: "color",
+    type: "color",
+    values: [
+      { id: 1, attribute_id: 1, value: "Red",   slug: "red",   color_hex: "#ef4444", created_at: "2026-01-01" },
+      { id: 2, attribute_id: 1, value: "Blue",  slug: "blue",  color_hex: "#3b82f6", created_at: "2026-01-01" },
+      { id: 3, attribute_id: 1, value: "Black", slug: "black", color_hex: "#000000", created_at: "2026-01-01" },
+      { id: 4, attribute_id: 1, value: "White", slug: "white", color_hex: "#ffffff", created_at: "2026-01-01" },
+      { id: 5, attribute_id: 1, value: "Green", slug: "green", color_hex: "#22c55e", created_at: "2026-01-01" },
+      { id: 6, attribute_id: 1, value: "Yellow",slug: "yellow",color_hex: "#eab308", created_at: "2026-01-01" },
+      { id: 7, attribute_id: 1, value: "Pink",  slug: "pink",  color_hex: "#ec4899", created_at: "2026-01-01" },
+      { id: 8, attribute_id: 1, value: "Orange",slug: "orange",color_hex: "#f97316", created_at: "2026-01-01" },
+    ],
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  },
+  {
+    id: 2,
+    name: "Size",
+    slug: "size",
+    type: "select",
+    values: [
+      { id: 9,  attribute_id: 2, value: "XS",  slug: "xs",  created_at: "2026-01-01" },
+      { id: 10, attribute_id: 2, value: "S",   slug: "s",   created_at: "2026-01-01" },
+      { id: 11, attribute_id: 2, value: "M",   slug: "m",   created_at: "2026-01-01" },
+      { id: 12, attribute_id: 2, value: "L",   slug: "l",   created_at: "2026-01-01" },
+      { id: 13, attribute_id: 2, value: "XL",  slug: "xl",  created_at: "2026-01-01" },
+      { id: 14, attribute_id: 2, value: "2XL", slug: "2xl", created_at: "2026-01-01" },
+      { id: 15, attribute_id: 2, value: "3XL", slug: "3xl", created_at: "2026-01-01" },
+    ],
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  },
+  {
+    id: 3,
+    name: "Material",
+    slug: "material",
+    type: "select",
+    values: [
+      { id: 16, attribute_id: 3, value: "Cotton",   slug: "cotton",   created_at: "2026-01-01" },
+      { id: 17, attribute_id: 3, value: "Polyester", slug: "polyester", created_at: "2026-01-01" },
+      { id: 18, attribute_id: 3, value: "Linen",    slug: "linen",    created_at: "2026-01-01" },
+      { id: 19, attribute_id: 3, value: "Silk",     slug: "silk",     created_at: "2026-01-01" },
+      { id: 20, attribute_id: 3, value: "Denim",    slug: "denim",    created_at: "2026-01-01" },
+    ],
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  },
+  {
+    id: 4,
+    name: "Storage",
+    slug: "storage",
+    type: "select",
+    values: [
+      { id: 21, attribute_id: 4, value: "64GB",  slug: "64gb",  created_at: "2026-01-01" },
+      { id: 22, attribute_id: 4, value: "128GB", slug: "128gb", created_at: "2026-01-01" },
+      { id: 23, attribute_id: 4, value: "256GB", slug: "256gb", created_at: "2026-01-01" },
+      { id: 24, attribute_id: 4, value: "512GB", slug: "512gb", created_at: "2026-01-01" },
+      { id: 25, attribute_id: 4, value: "1TB",   slug: "1tb",   created_at: "2026-01-01" },
+    ],
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  },
+  {
+    id: 5,
+    name: "RAM",
+    slug: "ram",
+    type: "select",
+    values: [
+      { id: 26, attribute_id: 5, value: "4GB",  slug: "4gb",  created_at: "2026-01-01" },
+      { id: 27, attribute_id: 5, value: "8GB",  slug: "8gb",  created_at: "2026-01-01" },
+      { id: 28, attribute_id: 5, value: "16GB", slug: "16gb", created_at: "2026-01-01" },
+      { id: 29, attribute_id: 5, value: "32GB", slug: "32gb", created_at: "2026-01-01" },
+    ],
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  },
+];
+
+const INITIAL_UNITS: Unit[] = [
+  { id: 1, name: "Piece",      symbol: "pcs", created_at: "2026-01-01" },
+  { id: 2, name: "Kilogram",   symbol: "kg",  created_at: "2026-01-01" },
+  { id: 3, name: "Gram",       symbol: "g",   created_at: "2026-01-01" },
+  { id: 4, name: "Liter",      symbol: "L",   created_at: "2026-01-01" },
+  { id: 5, name: "Milliliter", symbol: "ml",  created_at: "2026-01-01" },
+  { id: 6, name: "Pack",       symbol: "pack",created_at: "2026-01-01" },
+  { id: 7, name: "Box",        symbol: "box", created_at: "2026-01-01" },
+  { id: 8, name: "Dozen",      symbol: "dz",  created_at: "2026-01-01" },
+];
+
+// ─── Attribute CRUD ──────────────────────────────────────────────────────────
+
+export const getAttributes = (): Attribute[] => {
+  if (typeof window === "undefined") return INITIAL_ATTRIBUTES;
+  const stored = localStorage.getItem("hb_attributes");
+  if (!stored) {
+    localStorage.setItem("hb_attributes", JSON.stringify(INITIAL_ATTRIBUTES));
+    return INITIAL_ATTRIBUTES;
+  }
+  try { return JSON.parse(stored); } catch { return INITIAL_ATTRIBUTES; }
+};
+
+export const saveAttributes = (attrs: Attribute[]) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("hb_attributes", JSON.stringify(attrs));
+};
+
+// ─── Unit CRUD ───────────────────────────────────────────────────────────────
+
+export const getUnits = (): Unit[] => {
+  if (typeof window === "undefined") return INITIAL_UNITS;
+  const stored = localStorage.getItem("hb_units");
+  if (!stored) {
+    localStorage.setItem("hb_units", JSON.stringify(INITIAL_UNITS));
+    return INITIAL_UNITS;
+  }
+  try { return JSON.parse(stored); } catch { return INITIAL_UNITS; }
+};
+
+export const saveUnits = (units: Unit[]) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("hb_units", JSON.stringify(units));
+};
+
+// ─── Products ─────────────────────────────────────────────────────────────────
 
 export const getProducts = (): Product[] => {
   if (typeof window === "undefined") return INITIAL_PRODUCTS;

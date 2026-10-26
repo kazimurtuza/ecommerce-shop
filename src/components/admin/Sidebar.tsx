@@ -199,6 +199,7 @@ export default function Sidebar({
             { name: "Category", href: "/admin/categories" },
             { name: "Subcategory", href: "/admin/subcategories" },
             { name: "Unit", href: "/admin/units" },
+            { name: "Attributes", href: "/admin/attributes" },
             { name: "Brand", href: "/admin/brands" },
           ],
         },

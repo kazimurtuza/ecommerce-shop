@@ -35,9 +35,8 @@ export default function AdminLayout({
   };
 
   // Avoid hydration mismatch by waiting until mounted
-  const layoutClass = `flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans antialiased text-slate-800 dark:text-slate-200 ${
-    mounted && isDarkMode ? "dark" : ""
-  }`;
+  const layoutClass = `flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans antialiased text-slate-800 dark:text-slate-200 ${mounted && isDarkMode ? "dark" : ""
+    }`;
 
   return (
     <div className={layoutClass}>
@@ -47,15 +46,14 @@ export default function AdminLayout({
       {/* Main Content Pane */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin Header */}
-        <Header 
-          onMenuToggle={() => setIsSidebarOpen(true)} 
+        <Header
+          onMenuToggle={() => setIsSidebarOpen(true)}
           isDarkMode={mounted ? isDarkMode : false}
           onThemeToggle={toggleDarkMode}
         />
-
         {/* Dynamic Page Content */}
         <main className="flex-grow overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6 md:p-8">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[1536px]">
             {children}
           </div>
         </main>

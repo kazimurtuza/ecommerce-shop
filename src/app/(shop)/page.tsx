@@ -110,8 +110,8 @@ export default function HomePage() {
       <OfferSection />
 
       {/* Featured Products */}
-      <section className="py-16 bg-white px-6 w-full">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-16 bg-white px-4 sm:px-6 lg:px-8 w-full">
+        <div className="max-w-[1600px] mx-auto">
           <div className="flex justify-between items-end mb-10">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Featured Products</h2>

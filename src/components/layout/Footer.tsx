@@ -13,8 +13,8 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-accent-light border-t border-accent/20 font-sans text-slate-700 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start">
+    <footer className="w-full bg-slate-50 border-t border-slate-200/50 py-16 text-slate-600 font-sans">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start">
 
         {/* Column 1: Logo & Links */}
         <div className="md:col-span-3 space-y-6">

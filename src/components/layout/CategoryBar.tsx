@@ -291,7 +291,7 @@ export default function CategoryBar() {
 
   return (
     <div className="relative w-full bg-white border-b border-slate-100 z-40 font-sans select-none">
-      <div ref={containerRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative flex items-center h-12">
+      <div ref={containerRef} className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative flex items-center h-12">
         {/* Left Scroll Button */}
         {showScrollLeft && (
           <button

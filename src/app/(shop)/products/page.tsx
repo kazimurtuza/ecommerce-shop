@@ -544,8 +544,8 @@ export default function ProductsPage() {
   ]);
 
   return (
-    <div className="bg-slate-50 min-h-screen py-8 md:py-12 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-slate-50 min-h-screen py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto">
         {/* Top Header */}
         <div className="mb-6 pb-4 border-b border-slate-200/70 flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
